@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -71,4 +72,11 @@ func DeclareAndBind(
 	}
 
 	return channel, queue, nil
+}
+
+func SendChangeGameStatusMessage(pauseGameChannel *amqp.Channel, isPaused bool) {
+	gameState := routing.PlayingState{
+		IsPaused: isPaused,
+	}
+	PublishJSON(pauseGameChannel, routing.ExchangePerilDirect, routing.PauseKey, gameState)
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -24,6 +25,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	routingKey := fmt.Sprintf("%s.*", routing.GameLogSlug)
+	_, queue, err := pubsub.DeclareAndBind(
+		connection,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		routingKey,
+		pubsub.Durable,
+	)
+	if err != nil {
+		log.Fatalf("could not subscribe to pause: %v", err)
+	}
+	fmt.Printf("Queue %v declared and bound!\n", queue.Name)
 
 	for {
 		words := gamelogic.GetInput()
@@ -46,10 +59,4 @@ func main() {
 			log.Println("Wrong command. Please try again.")
 		}
 	}
-
-	// wait for ctrl+c
-	// signalChan := make(chan os.Signal, 1)
-	// signal.Notify(signalChan, os.Interrupt)
-	// <-signalChan
-	// println("\nSignal received. Terminating the program.")
 }

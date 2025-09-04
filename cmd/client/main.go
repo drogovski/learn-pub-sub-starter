@@ -23,6 +23,17 @@ func main() {
 
 	pubsub.DeclareAndBind(connection, routing.ExchangePerilDirect, queueName, routing.PauseKey, pubsub.Transient)
 	gameState := gamelogic.NewGameState(username)
+	err = pubsub.SubscribeJSON(
+		connection,
+		routing.ExchangePerilDirect,
+		queueName,
+		routing.PauseKey,
+		pubsub.Transient,
+		handlerPause(gameState),
+	)
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
 
 	gamelogic.PrintClientHelp()
 	for {

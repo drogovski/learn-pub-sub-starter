@@ -31,9 +31,9 @@ func PublishJSON[T any](ch *amqp.Channel, exchange, key string, val T) error {
 	)
 }
 
-func SendChangeGameStatusMessage(pauseGameChannel *amqp.Channel, isPaused bool) {
+func SendChangeGameStatusMessage(pauseGameChannel *amqp.Channel, isPaused bool) error {
 	gameState := routing.PlayingState{
 		IsPaused: isPaused,
 	}
-	PublishJSON(pauseGameChannel, routing.ExchangePerilDirect, routing.PauseKey, gameState)
+	return PublishJSON(pauseGameChannel, routing.ExchangePerilDirect, routing.PauseKey, gameState)
 }

@@ -44,12 +44,18 @@ func main() {
 		if len(words) > 0 {
 			if words[0] == "pause" {
 				log.Println("Sending a pause message.")
-				pubsub.SendChangeGameStatusMessage(pauseGameChannel, true)
+				err = pubsub.SendChangeGameStatusMessage(pauseGameChannel, true)
+				if err != nil {
+					log.Printf("could not publish time: %v", err)
+				}
 				continue
 			}
 			if words[0] == "resume" {
 				log.Println("Sending a resume message.")
-				pubsub.SendChangeGameStatusMessage(pauseGameChannel, false)
+				err = pubsub.SendChangeGameStatusMessage(pauseGameChannel, false)
+				if err != nil {
+					log.Printf("could not publish time: %v", err)
+				}
 				continue
 			}
 			if words[0] == "quit" {

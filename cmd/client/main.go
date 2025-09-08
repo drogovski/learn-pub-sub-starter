@@ -19,7 +19,12 @@ func main() {
 		log.Fatalf("could not connect to RabbitMQ: %v", err)
 	}
 	defer connection.Close()
-	fmt.Println("Client connected successfully.")
+	fmt.Println("Client connected successfully to RabbitMQ!.")
+
+	publishCh, err := connection.Channel()
+	if err != nil {
+		log.Fatalf("could not create channel: %v", err)
+	}
 
 	username, err := gamelogic.ClientWelcome()
 	if err != nil {
@@ -42,27 +47,28 @@ func main() {
 	armyMovesKey := fmt.Sprintf("%s.*", routing.ArmyMovesPrefix)
 	armyMovesQueueName := fmt.Sprintf("%s.%s", routing.ArmyMovesPrefix, gameState.GetUsername())
 
-	movesChannel, _, err := pubsub.DeclareAndBind(
-		connection,
-		routing.ExchangePerilTopic,
-		armyMovesQueueName,
-		armyMovesKey,
-		pubsub.Transient,
-	)
-	if err != nil {
-		log.Fatalf("could not decalare and bind army moves queue: %v", err)
-	}
-
 	err = pubsub.SubscribeJSON(
 		connection,
 		routing.ExchangePerilTopic,
 		armyMovesQueueName,
 		armyMovesKey,
 		pubsub.Transient,
-		handlerMove(gameState),
+		handlerMove(publishCh, gameState),
 	)
 	if err != nil {
 		log.Fatalf("could not subscribe to army moves queue: %v", err)
+	}
+
+	err = pubsub.SubscribeJSON(
+		connection,
+		routing.ExchangePerilTopic,
+		routing.WarRecognitionsPrefix,
+		routing.WarRecognitionsPrefix+".*",
+		pubsub.Durable,
+		handlerWar(gameState),
+	)
+	if err != nil {
+		log.Fatalf("could not subscribe to war declarations queue: %v", err)
 	}
 
 	gamelogic.PrintClientHelp()
@@ -81,7 +87,7 @@ func main() {
 				continue
 			}
 			err = pubsub.PublishJSON(
-				movesChannel,
+				publishCh,
 				routing.ExchangePerilTopic,
 				fmt.Sprintf("%s.%s", routing.ArmyMovesPrefix, username),
 				move,

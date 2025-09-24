@@ -25,14 +25,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	routingKey := fmt.Sprintf("%s.*", routing.GameLogSlug)
+
 	_, queue, err := pubsub.DeclareAndBind(
 		connection,
 		routing.ExchangePerilTopic,
 		routing.GameLogSlug,
-		routingKey,
+		routing.GameLogSlug+".*",
 		pubsub.Durable,
 	)
+
+	pubsub.SubscribeGob(
+		connection,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		routing.GameLogSlug+".*",
+		pubsub.Durable,
+		handlerWriteGameLog(),
+	)
+
 	if err != nil {
 		log.Fatalf("could not subscribe to pause: %v", err)
 	}
